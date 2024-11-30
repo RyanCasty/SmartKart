@@ -2,12 +2,12 @@
   "manifest_version": 3,
   "name": "SmartKart",
   "version": "1.0",
-  "description": "Detects Amazon pages and displays a popup.",
+  "description": "Extracts purchase information from Amazon checkout page and displays it in a popup.",
   "permissions": ["activeTab", "scripting"],
   "content_scripts": [
     {
-      "matches": ["*://*.amazon.ca/*"],
-      "js": ["content.js"]
+      "matches": ["*://*.amazon.ca/checkout/*"],
+      "js": ["checkout.js"]
     }
   ],
   "action": {
