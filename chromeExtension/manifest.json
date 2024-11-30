@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "SmartKart",
+  "version": "1.0",
+  "description": "Detects Amazon pages and displays a popup.",
+  "permissions": ["activeTab", "scripting"],
+  "content_scripts": [
+    {
+      "matches": ["*://*.amazon.ca/*"],
+      "js": ["content.js"]
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "icon.png"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  }
+}
