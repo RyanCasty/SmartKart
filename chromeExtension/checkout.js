@@ -15,9 +15,8 @@ function extractPurchaseInfo() {
   
     // Extract the total price using the correct selector
     let totalElement = document.querySelector('.grand-total-price');
-    let total = totalElement ? totalElement.innerText.trim() : 'Total not found';
+    let total = totalElement ? totalElement.textContent.trim() : 'Total not found';
   
-    // Collect all the purchase information
     const purchaseInfo = {
       items: items,
       total: total,
@@ -29,9 +28,27 @@ function extractPurchaseInfo() {
     chrome.runtime.sendMessage({ action: 'purchase_info', data: purchaseInfo });
   }
   
-  // Run the extraction after the page has fully loaded
+  function pollForTotalPrice(maxRetries = 20, delay = 500) {
+    let retries = 0;
+  
+    const intervalId = setInterval(() => {
+      const totalElement = document.querySelector('.grand-total-price');
+  
+      if (totalElement || retries >= maxRetries) {
+        if (totalElement) {
+          extractPurchaseInfo();
+        } else {
+          console.error('Failed to find total price element after maximum retries.');
+        }
+        clearInterval(intervalId); // Stop polling
+      }
+  
+      retries++;
+    }, delay);
+  }
+  
+  // Start polling for the total price element after the page loads
   window.addEventListener('load', () => {
-    // Set a timeout to give time for elements to load dynamically (adjust as needed)
-    setTimeout(extractPurchaseInfo, 2000);
+    pollForTotalPrice();
   });
   

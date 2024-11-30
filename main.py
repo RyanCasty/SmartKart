@@ -1,11 +1,62 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
+from authlib.integrations.requests_client import OAuth2Session
+import os
+import requests
+from dotenv import load_dotenv
 
-# Set Page Config
+# Load environment variables from .env file
+load_dotenv()
+
+# Auth0 Configuration
+AUTH0_DOMAIN = os.getenv("AUTH0_DOMAIN")
+CLIENT_ID = os.getenv("CLIENT_ID")
+CLIENT_SECRET = os.getenv("CLIENT_SECRET")
+REDIRECT_URI = os.getenv("REDIRECT_URI")
+TOKEN_URL = f"https://{AUTH0_DOMAIN}/oauth/token"
+USERINFO_URL = f"https://{AUTH0_DOMAIN}/userinfo"
+
+# OAuth2 session setup
+oauth = OAuth2Session(CLIENT_ID, CLIENT_SECRET, redirect_uri=REDIRECT_URI)
+
+# Streamlit Page Config
 st.set_page_config(page_title="Online Purchase Tracker", layout="wide")
 
-# Initialize session state
+# Handle Authentication
+if "access_token" not in st.session_state:
+    if st.sidebar.button("Login with Auth0"):
+        # Redirect user to Auth0 login page
+        authorization_url, state = oauth.create_authorization_url(f"https://{AUTH0_DOMAIN}/authorize")
+        st.experimental_set_query_params(state=state)  # Save state for security purposes
+        st.experimental_rerun()  # Refresh page to redirect to Auth0 login
+
+    # Check if redirected from Auth0 with a state
+    query_params = st.experimental_get_query_params()
+    if "state" in query_params:
+        code = query_params.get("code")
+        if code:
+            # Exchange authorization code for access token
+            token = oauth.fetch_token(TOKEN_URL, code=code[0])
+            st.session_state["access_token"] = token["access_token"]
+
+            # Use the access token to get user info
+            headers = {'Authorization': f'Bearer {st.session_state["access_token"]}'}
+            response = requests.get(USERINFO_URL, headers=headers)
+            userinfo = response.json()
+            st.session_state["user"] = userinfo
+            st.experimental_rerun()
+
+# Display User Information If Logged In
+if "user" in st.session_state:
+    user = st.session_state["user"]
+    st.sidebar.write(f"Welcome, {user['name']}")
+    st.sidebar.write(f"Email: {user['email']}")
+    if st.sidebar.button("Logout"):
+        st.session_state.clear()
+        st.experimental_rerun()
+
+# Initialize session state for transactions
 if "data" not in st.session_state:
     st.session_state["data"] = pd.DataFrame(columns=["Date", "Category", "Website", "Amount"])
 
